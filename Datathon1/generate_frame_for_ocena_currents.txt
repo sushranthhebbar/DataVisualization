@@ -1,0 +1,99 @@
+import pandas as pd
+from mpl_toolkits.basemap import Basemap
+import matplotlib.pyplot as plt
+from numpy import linspace
+from numpy import meshgrid
+import numpy as np
+import os
+from tqdm import tqdm
+
+directory1='CD732-Datathon-1/zonal_current_proc'
+directory2='CD732-Datathon-1/meridional_current_proc'
+file_list=[]
+for f in os.listdir(directory1):
+    if(f.endswith(".txt")):
+        file_list.append(f)
+file_list.sort()
+assert(len(file_list)==147)
+
+for file_name in tqdm(file_list):
+
+    z=pd.read_csv(directory1+'/'+file_name)
+    m=pd.read_csv(directory2+'/'+file_name)
+
+    id1='U'
+    id2='V'
+    # print("HERE")
+    # break
+    bad_flag=z[id1][0]
+    z[id1].replace({bad_flag:0},inplace=True)
+
+    bad_flag=m[id2][0]
+    m[id2].replace({bad_flag:0},inplace=True)
+    # print("HERE")
+    # mx=max(df[id])
+    # mi=min(df[id])
+
+    # original_ssha=df[id].tolist()
+    # original_ssha=np.asarray(original_ssha)
+    # original_ssha=np.reshape(original_ssha,(188,187))
+
+
+    # df[id]=df[id].apply(lambda x: ((x-mi)/(mx-mi)))
+
+    # lon=df['LON'].tolist()
+    # lat=df['LAT'].tolist()
+
+    # lon=list(set(lon))
+    # lat=list(set(lat))
+
+    # lon=np.asarray(lon)
+    # lat=np.asarray(lat)
+
+    # lat=np.sort(lat,axis=0)
+    # lon=np.sort(lon,axis=0)
+
+    u0=z[id1].tolist()
+    u0=np.asarray(u0)
+    u0=np.reshape(u0,(189,181))
+
+    v0=m[id2].tolist()
+    v0=np.asarray(v0)
+    v0=np.reshape(v0,(189,181))
+
+    fig = plt.figure(figsize=(11,7))
+    plt.title('Vector Field Visualisation of ocean currents - '+file_name[4:-4])
+    mm = Basemap(projection='cyl',llcrnrlon=30,llcrnrlat=-30.0005,urcrnrlon=120,urcrnrlat=30.0005,resolution = 'l')
+    # print(m.is_land(32.8395,-29.7511))
+    mm.drawmapboundary()
+    #Fill the continents with the land color
+    mm.fillcontinents()
+    mm.drawcoastlines(linewidth=0.5,color='#000000')
+
+    speed = np.sqrt(u0*u0 + v0*v0)
+
+    px, py = mm.makegrid(v0.shape[1], v0.shape[0], returnxy=True)[2:4]
+    # print(py)
+    ss=mm.streamplot(px, py, u0, v0, density=(1,1) ,color="#000000",linewidth=((3*speed)/speed.max()))
+
+    Q = mm.pcolormesh(px,py,speed,shading='gouraud',alpha=1, cmap=plt.cm.Blues)
+
+    # the colorbar parameters are set to 0,2 min,max and the shrink to 0.5
+    Q.set_clim(vmin=0, vmax=2);
+    cb = mm.colorbar(shrink=0.5,location='right',pad="10%",extend='both');
+    # cb.set_label('Speed')
+    cb.ax.set_title('Current speed \n m/s',fontsize=8)
+    # contour=m.contour(px,py,original_ssha,linestyles='solid',linewidths=0.5,colors='k')
+    # plt.clabel(contour,fontsize=13,inline=1)
+
+    parallels = np.arange(-30,31,10)
+    mm.drawparallels(parallels,labels=[False,True,True,False])
+
+    meridians=np.arange(30,121,10)
+    mm.drawmeridians(meridians,labels=[True,False,False,True])
+
+    img_name=file_name[:-3]
+    # plt.show()
+    plt.savefig('videos/current_img/'+(img_name+'png'))
+    plt.close(fig)
+    # break

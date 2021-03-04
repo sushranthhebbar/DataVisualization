@@ -1,0 +1,89 @@
+import pandas as pd
+from mpl_toolkits.basemap import Basemap
+import matplotlib.pyplot as plt
+from numpy import linspace
+from numpy import meshgrid
+import numpy as np
+import os
+from tqdm import tqdm
+
+directory='CD732-Datathon-1/SST_proc'
+file_list=[]
+for f in os.listdir(directory):
+    if(f.endswith(".txt")):
+        file_list.append(f)
+file_list.sort()
+assert(len(file_list)==147)
+
+for file_name in tqdm(file_list):
+
+    df=pd.read_csv(directory+'/'+file_name)
+    # z=pd.read_csv(directory+'/'+file_name)
+    id='SST'
+
+    # z=z[z[id]!=bad_flag]
+    # col=z[id].tolist()
+    # col=np.asarray(col)
+    # col_mean=np.mean(col)
+    # mx=max(df[id])
+    bad_flag=df[id][0]
+    df[id].replace({bad_flag:1000},inplace=True)
+    mi=min(df[id])
+    bad_flag=df[id][0]
+    df[id].replace({bad_flag:mi},inplace=True)
+
+
+
+
+    # original_ssha=df[id].tolist()
+    # original_ssha=np.asarray(original_ssha)
+    # original_ssha=np.reshape(original_ssha,(188,187))
+
+
+    # df[id]=df[id].apply(lambda x: ((x-mi)/(mx-mi)))
+
+    lon=df['LON'].tolist()
+    lat=df['LAT'].tolist()
+
+    lon=list(set(lon))
+    lat=list(set(lat))
+
+    lon=np.asarray(lon)
+    lat=np.asarray(lat)
+
+    lat=np.sort(lat,axis=0)
+    lon=np.sort(lon,axis=0)
+
+    ssha=df[id].tolist()
+    ssha=np.asarray(ssha)
+    ssha=np.reshape(ssha,(188,187))
+
+    fig = plt.figure(figsize=(11,7))
+    plt.title('Scaler Field Visualisation for SST - '+file_name[4:-4])
+    m = Basemap(projection='cyl',llcrnrlon=29.8892,llcrnrlat=-29.7511,urcrnrlon=119.8237,urcrnrlat=29.7511,resolution = 'l')
+    # m.drawmapboundary(fill_color='aqua')
+    m.fillcontinents(color='white')
+    m.drawcoastlines()
+
+    x,y=np.meshgrid(lon,lat)
+    px,py = m(x,y)
+
+    cs=m.contourf(px,py,ssha,extend='both')
+    # cs=m.contourf(px,py,ssha,np.arange(-5,35,5), extend='both')
+    cbar=m.colorbar(cs,location='right',pad="15%")
+    # cbar.set_label('parameterized scale')
+    cbar.ax.set_title('Current temperature in \n Celsius',fontsize=8)
+    # contour=m.contour(px,py,original_ssha,linestyles='solid',linewidths=0.5,colors='k')
+    # plt.clabel(contour,fontsize=13,inline=1)
+
+    parallels = np.arange(-30,31,10)
+    m.drawparallels(parallels,labels=[False,True,True,False])
+
+    meridians=np.arange(30,121,10)
+    m.drawmeridians(meridians,labels=[True,False,False,True])
+
+    img_name=file_name[:-3]
+    # plt.show()
+    plt.savefig('videos/SST_img/'+(img_name+'png'))
+    plt.close(fig)
+    # break
